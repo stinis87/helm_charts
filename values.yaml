@@ -6,6 +6,8 @@ global:
   imageRegistry: ""
   imagePullSecrets: []
   storageClass: "standard"
+  security:
+    allowInsecureImages: true
 
 replicaCount: 1
 
