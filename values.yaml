@@ -1,0 +1,430 @@
+# Default values for kub2.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: "standard"
+
+replicaCount: 1
+
+## @section Common parameters
+
+## @param kubeVersion Force target Kubernetes version (using Helm capabilities if not set)
+##
+kubeVersion: ""
+## @param nameOverride String to partially override drupal.fullname template (will maintain the release name)
+##
+nameOverride: ""
+## @param fullnameOverride String to fully override drupal.fullname template
+##
+fullnameOverride: ""
+## @param namespaceOverride String to fully override common.names.namespace
+##
+namespaceOverride: ""
+## @param commonAnnotations Common annotations to add to all Drupal resources (sub-charts are not considered). Evaluated as a template
+##
+commonAnnotations: {}
+## @param commonLabels Common labels to add to all Drupal resources (sub-charts are not considered). Evaluated as a template
+##
+commonLabels: {}
+
+
+image:
+  registry: ghcr.io
+  repository: andeersg/k8s_website
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets:
+  - name: ghcr-secret
+
+# The ports Drupal is available at.
+containerPorts:
+  http: 80
+  https: 443
+
+# @todo Group drupal variables.
+
+drupalPreprocess: true
+drupalDebug: false
+drupalHashSalt: ""
+
+drupalUsername: user
+drupalPassword: "passord"
+drupalEmail: user@example.com
+
+allowEmptyPassword: true
+
+# SMTP, set to true to create secret and include env variables.
+smtp: false
+
+# Set to true to enable private files.
+privateFiles:
+  enabled: false
+  size: "6Gi"
+
+cron:
+  enabled: false
+  schedule: ""
+  url: ""
+
+# Drush cron jobs.
+cronJobs: []
+
+basicAuth:
+  enabled: false
+  existingSecret: ""
+  ## One row for each user
+  ## e.g:
+  ## content: |
+  ##    testuser:{SHA}EWhzdhgoYJWy0z2gyzhRYlN9DSiv
+  ##
+  content: ""
+
+## Enable the startup probe for faster start.
+startupProbe:
+  enabled: false
+  path: /user/login
+  initialDelaySeconds: 600
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+livenessProbe:
+  enabled: false
+  path: /user/login
+  initialDelaySeconds: 600
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+readinessProbe:
+  enabled: false
+  path: /user/login
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 5
+  successThreshold: 1
+
+
+hostAliases:
+  ## Necessary for apache-exporter to work
+  ##
+  - ip: "127.0.0.1"
+    hostnames:
+      - "status.localhost"
+
+
+## @param command Override default container command (useful when using custom images)
+##
+command: []
+## @param args Override default container args (useful when using custom images)
+##
+args: []
+
+## @param extraEnvVars Extra environment variables
+## For example:
+##
+extraEnvVars: []
+#  - name: BEARER_AUTH
+#    value: true
+## @param extraEnvVarsCM ConfigMap containing extra env vars
+##
+extraEnvVarsCM: ""
+## @param extraEnvVarsSecret Secret containing extra env vars (in case of sensitive data)
+##
+extraEnvVarsSecret: ""
+
+## @param extraVolumes Array of extra volumes to be added to the deployment (evaluated as template). Requires setting `extraVolumeMounts`
+##
+extraVolumes: []
+## @param extraVolumeMounts Array of extra volume mounts to be added to the container (evaluated as template). Normally used with `extraVolumes`.
+##
+extraVolumeMounts: []
+
+initContainers: []
+
+## @param lifecycleHooks LifecycleHook to set additional configuration at startup Evaluated as a template
+##
+lifecycleHooks: {}
+
+updateStrategy:
+  type: RollingUpdate
+
+podAnnotations: {}
+
+priorityClassName: ""
+
+podAffinityPreset: ""
+
+podAntiAffinityPreset: soft
+## Node affinity preset
+## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+## @param nodeAffinityPreset.type Node affinity preset type. Ignored if `affinity` is set. Allowed values: `soft` or `hard`
+## @param nodeAffinityPreset.key Node label key to match Ignored if `affinity` is set.
+## @param nodeAffinityPreset.values Node label values to match. Ignored if `affinity` is set.
+##
+nodeAffinityPreset:
+  type: ""
+  ## E.g.
+  ## key: "kubernetes.io/e2e-az-name"
+  ##
+  key: ""
+  ## E.g.
+  ## values:
+  ##   - e2e-az1
+  ##   - e2e-az2
+  ##
+  values: []
+
+## Drupal container's resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+## @param resources.requests [object] The requested resources for the init container
+## @param resources.limits The resources limits for the init container
+##
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 300m
+  limits: {}
+
+
+podSecurityContext:
+  enabled: true
+  fsGroup: 1001
+
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1001
+  runAsNonRoot: true
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  ## @param service.type Kubernetes Service type
+  ##
+  type: ClusterIP
+  ## @param service.ports.http Service HTTP port
+  ## @param service.ports.https Service HTTPS port
+  ##
+  ports:
+    http: 80
+    https: 443
+  ## @param service.loadBalancerSourceRanges Restricts access for LoadBalancer (only with `service.type: LoadBalancer`)
+  ## e.g:
+  ## loadBalancerSourceRanges:
+  ##   - 0.0.0.0/0
+  ##
+  loadBalancerSourceRanges: []
+  ## @param service.loadBalancerIP loadBalancerIP for the Drupal Service (optional, cloud specific)
+  ## ref: https://kubernetes.io/docs/user-guide/services/#type-loadbalancer
+  loadBalancerIP: ""
+  ## @param service.nodePorts [object] Kubernetes node port
+  ## nodePorts:
+  ##   http: <to set explicitly, choose port between 30000-32767>
+  ##   https: <to set explicitly, choose port between 30000-32767>
+  ##
+  nodePorts:
+    http: ""
+    https: ""
+  ## @param service.externalTrafficPolicy Enable client source IP preservation
+  ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+  ##
+  externalTrafficPolicy: Cluster
+  ## @param service.clusterIP %%MAIN_CONTAINER_NAME%% service Cluster IP
+  ## e.g.:
+  ## clusterIP: None
+  ##
+  clusterIP: ""
+  ## @param service.extraPorts Extra ports to expose (normally used with the `sidecar` value)
+  ##
+  extraPorts: []
+  ## @param service.annotations Additional custom annotations for %%MAIN_CONTAINER_NAME%% service
+  ##
+  annotations: {}
+  ## @param service.sessionAffinity Session Affinity for Kubernetes service, can be "None" or "ClientIP"
+  ## If "ClientIP", consecutive client requests will be directed to the same Pod
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+  ##
+  sessionAffinity: None
+  ## @param service.sessionAffinityConfig Additional settings for the sessionAffinity
+  ## sessionAffinityConfig:
+  ##   clientIP:
+  ##     timeoutSeconds: 300
+  ##
+  sessionAffinityConfig: {}
+
+ingress:
+  enabled: false
+  pathType: ImplementationSpecific
+  apiVersion: ""
+  ingressClassName: ""
+  hostname: "drupal.local"
+  path: /
+  tls: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  secrets: []
+  extraRules: []
+  ## @param ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+  ## For a full list of possible ingress annotations, please see
+  ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+  ## Use this parameter to set the required annotations for cert-manager, see
+  ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+  ##
+  ## e.g:
+  ## annotations:
+  ##   kubernetes.io/ingress.class: nginx
+  ##   cert-manager.io/cluster-issuer: cluster-issuer-name
+  ##
+  annotations: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+persistence:
+  enabled: true
+  storageClass: "standard"
+  accessModes:
+    - ReadWriteMany
+  size: 8Gi
+  existingClaim: ""
+  hostPath: ""
+  annotations: {}
+
+# Taken from bitnami-drupal:
+mariadb:
+  enabled: true
+  architecture: standalone
+  auth:
+    rootPassword: "passord"
+    database: bitnami_drupal
+    username: bn_drupal
+    password: "passord"
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 8Gi
+      hostPath: ""
+      existingClaim: ""
+    configuration: |-
+      [mysqld]
+      skip-name-resolve
+      explicit_defaults_for_timestamp
+      basedir=/opt/bitnami/mariadb
+      plugin_dir=/opt/bitnami/mariadb/plugin
+      port=3306
+      socket=/opt/bitnami/mariadb/tmp/mysql.sock
+      tmpdir=/opt/bitnami/mariadb/tmp
+      max_allowed_packet=16M
+      bind-address=::
+      pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
+      log-error=/opt/bitnami/mariadb/logs/mysqld.log
+      character-set-server=UTF8
+      collation-server=utf8_general_ci
+      slow_query_log=0
+      slow_query_log_file=/opt/bitnami/mariadb/logs/mysqld.log
+      long_query_time=10.0
+      innodb_buffer_pool_size=2G
+
+      [client]
+      port=3306
+      socket=/opt/bitnami/mariadb/tmp/mysql.sock
+      default-character-set=UTF8
+      plugin_dir=/opt/bitnami/mariadb/plugin
+
+      [manager]
+      port=3306
+      socket=/opt/bitnami/mariadb/tmp/mysql.sock
+      pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
+
+externalDatabase:
+  host: ""
+  port: 3306
+  user: bn_drupal
+  password: ""
+  database: bitnami_drupal
+
+networkPolicy:
+  enabled: false
+  metrics:
+    enabled: false
+    podSelector: {}
+    namespaceSelector: {}
+  ingress:
+    enabled: false
+    podSelector: {}
+    namespaceSelector: {}
+  ingressRules:
+    backendOnlyAccessibleByFrontend: false
+    customBackendSelector: {}
+    accessOnlyFrom:
+      enabled: false
+      namespaceSelector: {}
+      podSelector: {}
+    customRules: {}
+  egressRules:
+    denyConnectionsToExternal: false
+    customRules: {}
+
+volumePermissions:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/bitnami-shell
+    tag: 10-debian-10-r400
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  resources:
+    limits: {}
+    requests: {}
+
+## Certificate section:
+
+certificates:
+  customCertificate:
+    certificateSecret: ""
+    chainSecret:
+      name: secret-name
+      key: secret-key
+    certificateLocation: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    keyLocation: /etc/ssl/private/ssl-cert-snakeoil.key
+    chainLocation: /etc/ssl/certs/mychain.pem
+  customCAs: []
+  command: []
+  args: []
+  extraEnvVars: []
+  extraEnvVarsCM: []
+  extraEnvVarsSecret: []
+  image:
+    registry: docker.io
+    repository: bitnami/bitnami-shell
+    tag: 11-debian-11-r0
+    pullPolicy: IfNotPresent
+    pullSecrets: []
