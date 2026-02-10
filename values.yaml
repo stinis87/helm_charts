@@ -4,7 +4,8 @@
 
 global:
   imageRegistry: ""
-  imagePullSecrets: []
+  imagePullSecrets:
+    - name: ghcr-secret
   storageClass: "standard"
   security:
     allowInsecureImages: true
