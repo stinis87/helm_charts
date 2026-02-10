@@ -1,0 +1,21 @@
+apiVersion: v2
+name: drupal
+description: A Helm chart for Drupal
+
+type: application
+
+version: 0.2.1
+
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+# It is recommended to use it with quotes.
+#
+# @TODO Must be overridden per repo.
+appVersion: "1.0.1"
+
+dependencies:
+  - condition: mariadb.enabled
+    name: mariadb
+    repository: https://charts.bitnami.com/bitnami
+    version: 20.5.4
